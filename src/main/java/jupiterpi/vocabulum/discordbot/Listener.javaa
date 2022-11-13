@@ -1,0 +1,62 @@
+package jupiterpi.vocabulum.discordbot;
+
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+
+/*
+public class Listener extends ListenerAdapter {
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+        if (event.getMessage().getContentDisplay().contains("ping")) {
+            event.getChannel().sendMessage("pong").queue();
+        }
+
+        if (event.getMessage().getContentDisplay().contains("buttons")) {
+            event.getChannel().sendMessage("Choose a button:")
+                    .addActionRow(
+                            Button.primary("good", "Good"),
+                            Button.primary("bad", "Bad"),
+                            Button.secondary("exit", "Exit")
+                    )
+                    .queue();
+        }
+    }
+
+    @Override
+    public void onButtonInteraction(ButtonInteractionEvent event) {
+        String btn = event.getComponentId();
+        */
+/*event.getHook().editOriginalComponents(ActionRow.of(
+                Button.primary("good", "Good"),
+                Button.primary("bad", "Bad")
+        )).queue();*//*
+
+        event.getMessage().editMessageComponents(ActionRow.of(
+                Button.primary("good", "Good"),
+                Button.primary("bad", "Bad")
+        )).queue();
+        switch (btn) {
+            case "exit" -> event.reply("Leaving...").queue();
+            case "good" -> event.reply("Good, good.").queue();
+            case "bad" -> event.reply("Oh no!").queue();
+        }
+    }
+
+    @Override
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        if (event.getName().equals("ping")) {
+            OptionMapping message = event.getOption("message");
+            if (message != null) {
+                event.reply("Pong! Message: " + message.getAsString()).queue();
+            } else {
+                event.reply("Pong!").queue();
+            }
+        }
+    }
+}
+*/
