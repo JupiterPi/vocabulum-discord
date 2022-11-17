@@ -12,3 +12,5 @@ buildNumber.properties
 
 .idea
 configuration
+
+mongodb_connect_url.txt
