@@ -13,8 +13,10 @@ import jupiterpi.vocabulum.core.vocabularies.declined.nouns.NounForm;
 import jupiterpi.vocabulum.core.vocabularies.inflexible.Inflexible;
 import jupiterpi.vocabulum.core.vocabularies.translations.VocabularyTranslation;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 
 import java.awt.*;
@@ -25,7 +27,7 @@ import java.util.List;
 public class SearchListener extends ListenerAdapter {
     public static void init() {
         App.jda.upsertCommand(SEARCH_COMMAND, "Vokabelsuche")
-                .addOption(OptionType.STRING, SEARCH_COMMAND_QUERY_OPTION, "Vokabel, nach der gesucht werden soll, oder ein Teil davon", true, false)
+                .addOption(OptionType.STRING, SEARCH_COMMAND_QUERY_OPTION, "Vokabel, nach der gesucht werden soll, oder ein Teil davon", true, true)
                 .queue();
         App.jda.addEventListener(new SearchListener());
     }
@@ -105,8 +107,31 @@ public class SearchListener extends ListenerAdapter {
                     case INFLEXIBLE -> new Color(242, 159, 5);
                 });
 
-                event.getChannel().sendMessage(queryDisplay).addEmbeds(embed.build()).queue();
+                event.getChannel().sendMessage(queryDisplay + " (" + form.formToString(CoreService.get().i18n) + " +" + (result.getForms().size()-1) + ")").addEmbeds(embed.build()).queue();
             }
+        }
+    }
+
+    @Override
+    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent event) {
+        if (event.getName().equals(SEARCH_COMMAND) && event.getFocusedOption().getName().equals(SEARCH_COMMAND_QUERY_OPTION)) {
+            String input = event.getFocusedOption().getValue();
+            List<Command.Choice> choices = new ArrayList<>();
+            List<IdentificationResult> identificationResults = Database.get().getWordbase().identifyWord(input, true);
+            for (IdentificationResult result : identificationResults.subList(0, Math.min(identificationResults.size(), 5))) {
+                Vocabulary vocabulary = result.getVocabulary();
+                VocabularyForm form = result.getForms().get(0);
+                String matchedForm = switch (vocabulary.getKind()) {
+                    case NOUN -> ((Noun) vocabulary).makeFormOrDash((NounForm) form);
+                    case ADJECTIVE -> ((Adjective) vocabulary).makeFormOrDash((AdjectiveForm) form);
+                    case VERB -> ((Verb) vocabulary).makeFormOrDash((VerbForm) form);
+                    case INFLEXIBLE -> null;
+                };
+                choices.add(new Command.Choice(matchedForm + " (" + vocabulary.getBaseForm() + ")", matchedForm));
+            }
+            event.replyChoices(choices).queue();
+        } else {
+            event.replyChoices(new Command.Choice("hello", "there")).queue();
         }
     }
 }
