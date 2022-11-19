@@ -22,6 +22,7 @@ public class App {
         System.out.println("Loaded!");
 
         jda.updateCommands().addCommands().complete();
+        StartMessage.init();
         SearchListener.init();
         AppListener.init();
     }
