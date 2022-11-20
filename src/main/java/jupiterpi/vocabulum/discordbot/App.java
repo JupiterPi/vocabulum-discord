@@ -1,5 +1,6 @@
 package jupiterpi.vocabulum.discordbot;
 
+import jupiterpi.vocabulum.discordbot.state.StateManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -22,8 +23,9 @@ public class App {
         System.out.println("Loaded!");
 
         jda.updateCommands().addCommands().complete();
-        StartMessage.init();
-        SearchListener.init();
         AppListener.init();
+        StartMessage.init();
+        StateManager.init();
+        //SearchListener.init();
     }
 }

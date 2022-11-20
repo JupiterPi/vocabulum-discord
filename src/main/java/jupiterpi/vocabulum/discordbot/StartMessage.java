@@ -35,7 +35,7 @@ public class StartMessage extends ListenerAdapter {
     public void onButtonInteraction(ButtonInteractionEvent event) {
         if (event.getButton().getId().equals("start-bot")) {
             event.getUser().openPrivateChannel().queue(channel -> {
-                channel.sendMessage("Hello there").queue();
+                channel.sendMessage("Herzlich Willkommen! Du kannst jetzt Vocabulum hier in Discord verwenden. Die folgenden Befehle sind verfügbar: /search, /abfrage").queue();
             });
             event.reply("Du hast eine Direktnachricht erhalten.").setEphemeral(true).queue();
         }
