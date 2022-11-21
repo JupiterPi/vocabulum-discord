@@ -1,6 +1,6 @@
 package jupiterpi.vocabulum.discordbot.state;
 
-import jupiterpi.vocabulum.discordbot.Component;
+import jupiterpi.vocabulum.discordbot.components.Component;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;

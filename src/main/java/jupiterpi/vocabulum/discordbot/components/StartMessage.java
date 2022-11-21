@@ -1,5 +1,7 @@
-package jupiterpi.vocabulum.discordbot;
+package jupiterpi.vocabulum.discordbot.components;
 
+import jupiterpi.vocabulum.discordbot.App;
+import jupiterpi.vocabulum.discordbot.ConfigFile;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;

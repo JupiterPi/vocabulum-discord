@@ -1,11 +1,12 @@
 package jupiterpi.vocabulum.discordbot;
 
+import jupiterpi.vocabulum.discordbot.components.AppListener;
+import jupiterpi.vocabulum.discordbot.components.Component;
+import jupiterpi.vocabulum.discordbot.components.StartMessage;
 import jupiterpi.vocabulum.discordbot.state.StateManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 

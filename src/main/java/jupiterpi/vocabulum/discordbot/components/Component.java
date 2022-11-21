@@ -1,4 +1,4 @@
-package jupiterpi.vocabulum.discordbot;
+package jupiterpi.vocabulum.discordbot.components;
 
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
