@@ -1,6 +1,9 @@
 package jupiterpi.vocabulum.discordbot.state;
 
 import jupiterpi.vocabulum.discordbot.components.Component;
+import jupiterpi.vocabulum.discordbot.state.sessions.Direction;
+import jupiterpi.vocabulum.discordbot.state.sessions.Mode;
+import jupiterpi.vocabulum.discordbot.state.sessions.SessionState;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
@@ -10,6 +13,7 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
@@ -67,11 +71,30 @@ public class StateManager extends ListenerAdapter {
                 }
             }
 
-            state = switch (event.getName()) {
-                case SEARCH_COMMAND -> new SearchState(event.getOption(SEARCH_COMMAND_QUERY_OPTION).getAsString());
-                case SESSION_COMMAND -> null;
-                default -> null;
-            };
+            if (event.getName().equals(SEARCH_COMMAND)) {
+                state = new SearchState(event.getOption(SEARCH_COMMAND_QUERY_OPTION).getAsString());
+            }
+            if (event.getName().equals(SESSION_COMMAND)) {
+                OptionMapping directionOption = event.getOption(SESSION_COMMAND_DIRECTION_OPTION);
+                Direction direction = directionOption != null ? (switch (directionOption.getAsString()) {
+                    case SESSION_COMMAND_DIRECTION_OPTION_GL -> Direction.GL;
+                    case SESSION_COMMAND_DIRECTION_OPTION_LG -> Direction.LG;
+                    case SESSION_COMMAND_DIRECTION_OPTION_RAND -> Direction.RAND;
+                    default -> null;
+                }) : null;
+
+                OptionMapping modeOption = event.getOption(SESSION_COMMAND_MODE_OPTION);
+                Mode mode = modeOption != null ? (switch (modeOption.getAsString()) {
+                    case SESSION_COMMAND_MODE_OPTION_CHAT -> Mode.CHAT;
+                    case SESSION_COMMAND_MODE_OPTION_CARDS -> Mode.CARDS;
+                    default -> null;
+                }) : null;
+
+                state = new SessionState(event.getOption(SESSION_COMMAND_SELECTION_OPTION).getAsString())
+                        .setDirection(direction)
+                        .setMode(mode);
+            }
+
             if (state == null) {
                 event.reply("Der Befehl konnte nicht verarbeitet werden!").setEphemeral(true).queue();
             } else {

@@ -14,9 +14,7 @@ import jupiterpi.vocabulum.core.vocabularies.inflexible.Inflexible;
 import jupiterpi.vocabulum.core.vocabularies.translations.VocabularyTranslation;
 import jupiterpi.vocabulum.discordbot.CoreService;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -25,7 +23,6 @@ import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
-import net.dv8tion.jda.api.utils.messages.MessageEditData;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -36,7 +33,6 @@ public class SearchState implements State {
     private String query;
     private List<IdentificationResult> results;
     private int currentPagination;
-    private Message paginationMessage;
 
     private static final int RESULTS_PER_PAGE = 5;
 
@@ -116,7 +112,6 @@ public class SearchState implements State {
                     moreButton
             );
         }
-        messageCreateAction.queue(message -> paginationMessage = message);
     }
 
     private void printCurrentPage(MessageChannelUnion channel) {
