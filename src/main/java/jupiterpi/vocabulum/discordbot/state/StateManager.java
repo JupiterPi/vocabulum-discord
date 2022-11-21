@@ -4,6 +4,7 @@ import jupiterpi.vocabulum.discordbot.Component;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -23,7 +24,7 @@ public class StateManager extends ListenerAdapter {
         return new Component()
                 .slashCommands(
                         Commands.slash(SEARCH_COMMAND, "Nach Vokabeln suchen")
-                                .addOption(OptionType.STRING, SEARCH_COMMAND_QUERY_OPTION, "Vokabel, nach der gesucht werden soll, oder ein Teil davon", true, false),
+                                .addOption(OptionType.STRING, SEARCH_COMMAND_QUERY_OPTION, "Vokabel, nach der gesucht werden soll, oder ein Teil davon", true, true),
                         Commands.slash(SESSION_COMMAND, "Eine Vokabelabfrage starten")
                                 .addOption(OptionType.STRING, SESSION_COMMAND_SELECTION_OPTION, "Auswahl von Vokabeln, die abgefragt werden sollen", true, false)
                                 .addOption(OptionType.STRING, SESSION_COMMAND_MODE_OPTION, "Abfragemodus (\"Chat\" oder \"Cards\")", false, false)
@@ -91,6 +92,16 @@ public class StateManager extends ListenerAdapter {
             if (state != null) {
                 state.onButtonInteraction(event);
             }
+        }
+    }
+
+    // other handlers
+
+
+    @Override
+    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent event) {
+        if (event.getName().equals(SEARCH_COMMAND) && event.getFocusedOption().getName().equals(SEARCH_COMMAND_QUERY_OPTION)) {
+            SearchState.handleQueryAutocomplete(event);
         }
     }
 }

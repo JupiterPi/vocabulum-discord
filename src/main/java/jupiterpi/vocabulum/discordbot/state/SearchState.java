@@ -17,9 +17,11 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
@@ -44,17 +46,26 @@ public class SearchState implements State {
 
     private static final String BTN_MORE = "search_more";
 
+    public static void handleQueryAutocomplete(CommandAutoCompleteInteractionEvent event) {
+        String input = event.getFocusedOption().getValue();
+        List<Command.Choice> choices = new ArrayList<>();
+        List<IdentificationResult> identificationResults = fetchResults(input);
+        for (IdentificationResult result : identificationResults.subList(0, Math.min(identificationResults.size(), 5))) {
+            String matchedForm = result.makePrimaryFoundForm();
+            String baseForm = result.getVocabulary().getBaseForm();
+
+            String str = matchedForm;
+            if (!matchedForm.equals(baseForm)) {
+                str += " (" + baseForm + ")";
+            }
+            choices.add(new Command.Choice(str, matchedForm));
+        }
+        event.replyChoices(choices).queue();
+    }
+
     @Override
     public void start(SlashCommandInteractionEvent event) {
-        results = Database.get().getWordbase().identifyWord(query, true);
-        results.sort(Comparator
-                .comparing((IdentificationResult i) -> i.makePrimaryFoundForm().indexOf(query))
-                .thenComparing(i -> i.makePrimaryFoundForm().length())
-                /*.thenComparing(
-                        Comparator.comparing((IdentificationResult i) -> i.makePrimaryFoundForm().length()).reversed()
-                )*/
-        );
-
+        results = fetchResults(query);
         int amount = results.size();
         event.reply("Ich habe **" + amount + "** Vokabeln für **" + query + "** gefunden:").queue();
 
@@ -64,6 +75,15 @@ public class SearchState implements State {
         if (amount > RESULTS_PER_PAGE) {
             printPaginationFooter(event.getChannel());
         }
+    }
+
+    private static List<IdentificationResult> fetchResults(String query) {
+        List<IdentificationResult> results = Database.get().getWordbase().identifyWord(query, true);
+        results.sort(Comparator
+                .comparing((IdentificationResult i) -> i.makePrimaryFoundForm().indexOf(query))
+                .thenComparing(i -> i.makePrimaryFoundForm().length())
+        );
+        return results;
     }
 
     @Override
@@ -113,7 +133,7 @@ public class SearchState implements State {
             case NOUN -> ((Noun) vocabulary).makeFormOrDash((NounForm) form);
             case ADJECTIVE -> ((Adjective) vocabulary).makeFormOrDash((AdjectiveForm) form);
             case VERB -> ((Verb) vocabulary).makeFormOrDash((VerbForm) form);
-            case INFLEXIBLE -> null;
+            case INFLEXIBLE -> vocabulary.getBaseForm();
         };
         int matchStart = matchedForm.indexOf(query);
         int matchEnd = matchStart + query.length();
@@ -132,6 +152,7 @@ public class SearchState implements State {
         Vocabulary.Kind kind = vocabulary.getKind();
         if (kind == Vocabulary.Kind.NOUN) {
             Noun noun = (Noun) vocabulary;
+            embed.setDescription("Substantiv");
             embed.addField("Deklinationsschema", switch (noun.getDeclensionSchema()) {
                 case "a" -> "a-Deklination";
                 case "o" -> "o-Deklination";
@@ -142,8 +163,10 @@ public class SearchState implements State {
             }, true);
         } else if (kind == Vocabulary.Kind.ADJECTIVE) {
             Adjective adjective = (Adjective) vocabulary;
+            embed.setDescription("Adjektiv");
         } else if (kind == Vocabulary.Kind.VERB) {
             Verb verb = (Verb) vocabulary;
+            embed.setDescription("Verb");
             embed.addField("Konjugationsschema", switch (verb.getConjugationSchema()) {
                 case "a" -> "a-Konjugation";
                 case "e" -> "e-Konjugation";
@@ -153,6 +176,7 @@ public class SearchState implements State {
                 default -> verb.getConjugationSchema();
             }, true);
         } else if (kind == Vocabulary.Kind.INFLEXIBLE) {
+            embed.setDescription("nicht flektiert");
             Inflexible inflexible = (Inflexible) vocabulary;
         }
 
@@ -164,7 +188,7 @@ public class SearchState implements State {
             case INFLEXIBLE -> new Color(242, 159, 5);
         });
 
-        channel.sendMessage(queryDisplay + " (" + form.formToString(CoreService.get().i18n) + " +" + (result.getForms().size()-1) + ")").addEmbeds(embed.build()).queue();
+        channel.sendMessage(queryDisplay + ((vocabulary.getKind() != Vocabulary.Kind.INFLEXIBLE) ? " (" + form.formToString(CoreService.get().i18n) + " +" + (result.getForms().size()-1) + ")" : "")).addEmbeds(embed.build()).queue();
     }
 
     @Override
