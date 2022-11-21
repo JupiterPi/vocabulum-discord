@@ -2,12 +2,15 @@ package jupiterpi.vocabulum.discordbot;
 
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 public class AppListener extends ListenerAdapter {
-    public static void init() {
-        App.jda.upsertCommand("delete", "Delete all messages")
-                .queue();
-        App.jda.addEventListener(new AppListener());
+    public static Component component() {
+        return new Component()
+                .slashCommands(
+                        Commands.slash("delete", "Delete all messages")
+                )
+                .eventListeners(new AppListener());
     }
 
     @Override

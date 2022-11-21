@@ -1,6 +1,6 @@
 package jupiterpi.vocabulum.discordbot.state;
 
-import jupiterpi.vocabulum.discordbot.App;
+import jupiterpi.vocabulum.discordbot.Component;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
@@ -9,25 +9,27 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class StateManager extends ListenerAdapter {
-    private Map<User, State> states = new HashMap<>();
+    private Map<String, State> states = new HashMap<>();
 
     public StateManager() {}
 
-    public static void init() {
-        App.jda.upsertCommand(SEARCH_COMMAND, "Nach Vokabeln suchen")
-                .addOption(OptionType.STRING, SEARCH_COMMAND_QUERY_OPTION, "Vokabel, nach der gesucht werden soll, oder ein Teil davon", true, true)
-                .queue();
-        App.jda.upsertCommand(SESSION_COMMAND, "Eine Vokabelabfrage starten")
-                .addOption(OptionType.STRING, SESSION_COMMAND_SELECTION_OPTION, "Auswahl von Vokabeln, die abgefragt werden sollen", true, false)
-                .addOption(OptionType.STRING, SESSION_COMMAND_MODE_OPTION, "Abfragemodus (\"Chat\" oder \"Cards\")", false, false)
-                .addOption(OptionType.STRING, SESSION_COMMAND_DIRECTION_OPTION, "Abfragerichtung (\"lg\", \"gl\" oder \"rand\")", false, false)
-                .queue();
-        App.jda.addEventListener(new StateManager());
+    public static Component component() {
+        return new Component()
+                .slashCommands(
+                        Commands.slash(SEARCH_COMMAND, "Nach Vokabeln suchen")
+                                .addOption(OptionType.STRING, SEARCH_COMMAND_QUERY_OPTION, "Vokabel, nach der gesucht werden soll, oder ein Teil davon", true, false),
+                        Commands.slash(SESSION_COMMAND, "Eine Vokabelabfrage starten")
+                                .addOption(OptionType.STRING, SESSION_COMMAND_SELECTION_OPTION, "Auswahl von Vokabeln, die abgefragt werden sollen", true, false)
+                                .addOption(OptionType.STRING, SESSION_COMMAND_MODE_OPTION, "Abfragemodus (\"Chat\" oder \"Cards\")", false, false)
+                                .addOption(OptionType.STRING, SESSION_COMMAND_DIRECTION_OPTION, "Abfragerichtung (\"lg\", \"gl\" oder \"rand\")", false, false)
+                )
+                .eventListeners(new StateManager());
     }
 
     private static final String SEARCH_COMMAND = "suche";
@@ -43,7 +45,7 @@ public class StateManager extends ListenerAdapter {
         if (event.getChannel().getType() == ChannelType.PRIVATE) {
             User user = event.getChannel().asPrivateChannel().getUser();
 
-            State state = states.get(user);
+            State state = states.get(user.getId());
             if (state != null) {
                 boolean stoppable = state.stop();
                 if (!stoppable) {
@@ -64,6 +66,7 @@ public class StateManager extends ListenerAdapter {
             } else {
                 state.start(event);
             }
+            states.put(user.getId(), state);
         }
     }
 
@@ -73,7 +76,7 @@ public class StateManager extends ListenerAdapter {
     public void onMessageReceived(MessageReceivedEvent event) {
         if (event.getChannel().getType() == ChannelType.PRIVATE) {
             PrivateChannel privateChannel = event.getChannel().asPrivateChannel();
-            State state = states.get(privateChannel.getUser());
+            State state = states.get(privateChannel.getUser().getId());
             if (state != null) {
                 state.onMessageReceived(event);
             }
@@ -84,7 +87,7 @@ public class StateManager extends ListenerAdapter {
     public void onButtonInteraction(ButtonInteractionEvent event) {
         if (event.getChannel().getType() == ChannelType.PRIVATE) {
             PrivateChannel privateChannel = event.getChannel().asPrivateChannel();
-            State state = states.get(privateChannel.getUser());
+            State state = states.get(privateChannel.getUser().getId());
             if (state != null) {
                 state.onButtonInteraction(event);
             }

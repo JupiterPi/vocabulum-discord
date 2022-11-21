@@ -14,12 +14,16 @@ import jupiterpi.vocabulum.core.vocabularies.inflexible.Inflexible;
 import jupiterpi.vocabulum.core.vocabularies.translations.VocabularyTranslation;
 import jupiterpi.vocabulum.discordbot.CoreService;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -30,6 +34,7 @@ public class SearchState implements State {
     private String query;
     private List<IdentificationResult> results;
     private int currentPagination;
+    private Message paginationMessage;
 
     private static final int RESULTS_PER_PAGE = 5;
 
@@ -37,15 +42,17 @@ public class SearchState implements State {
         this.query = query;
     }
 
-    private static final String BTN_PAGE_BACK = "search_page_back";
-    private static final String BTN_PAGE_FORWARD = "search_page_forward";
+    private static final String BTN_MORE = "search_more";
 
     @Override
     public void start(SlashCommandInteractionEvent event) {
         results = Database.get().getWordbase().identifyWord(query, true);
         results.sort(Comparator
-                .comparing((IdentificationResult i) -> i.getVocabulary().getBaseForm().indexOf(query))
-                .thenComparing(i -> i.getVocabulary().getBaseForm().length())
+                .comparing((IdentificationResult i) -> i.makePrimaryFoundForm().indexOf(query))
+                .thenComparing(i -> i.makePrimaryFoundForm().length())
+                /*.thenComparing(
+                        Comparator.comparing((IdentificationResult i) -> i.makePrimaryFoundForm().length()).reversed()
+                )*/
         );
 
         int amount = results.size();
@@ -61,24 +68,15 @@ public class SearchState implements State {
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
-        String btn = event.getButton().getId();
-        if (btn.equals(BTN_PAGE_BACK) || btn.equals(BTN_PAGE_FORWARD)) {
-            if (btn.equals(BTN_PAGE_BACK)) {
-                if (currentPagination > 0) {
-                    currentPagination--;
-                } else {
-                    event.reply("Keine vorhergehende Seite.").setEphemeral(true).queue();
-                    return;
-                }
-            }
-            if (btn.equals(BTN_PAGE_FORWARD)) {
-                int pagesAmount = (int) Math.ceil(results.size() / 5f);
-                if (currentPagination < pagesAmount) {
-                    currentPagination++;
-                } else {
-                    event.reply("Keine weitere Seite.").setEphemeral(true).queue();
-                    return;
-                }
+        if (event.getButton().getId().equals(BTN_MORE)) {
+            event.getMessage().editMessageComponents(ActionRow.of(event.getButton().asDisabled())).queue();
+
+            int pagesAmount = (int) Math.ceil(results.size() / 5f);
+            if (currentPagination < pagesAmount) {
+                currentPagination++;
+            } else {
+                event.reply("Keine weiteren Ergebnisse.").setEphemeral(true).queue();
+                return;
             }
             event.reply("Seite **" + (currentPagination+1) + "** der Ergebnisse:").queue();
             printCurrentPage(event.getChannel());
@@ -89,18 +87,16 @@ public class SearchState implements State {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {}
 
+    Button moreButton = Button.primary(BTN_MORE, "Mehr Ergebnisse zeigen");
     private void printPaginationFooter(MessageChannelUnion channel) {
-        int pagesAmount = (int) Math.ceil(results.size() / 5f);
-
-        Button backButton = Button.secondary(BTN_PAGE_BACK, Emoji.fromUnicode("U+2B05"));
-        Button forwardButton = Button.secondary(BTN_PAGE_FORWARD, Emoji.fromUnicode("U+27A1"));
-
-        channel.sendMessage("Seite **" + (currentPagination+1) + "** von **" + pagesAmount + "**")
-                .addActionRow(
-                        currentPagination == 0 ? backButton.asDisabled() : backButton,
-                        currentPagination == pagesAmount-1 ? forwardButton.asDisabled() : forwardButton
-                )
-                .queue();
+        int pagesAmount = (int) Math.ceil(results.size() / (float) RESULTS_PER_PAGE);
+        MessageCreateAction messageCreateAction = channel.sendMessage("Zeigt **" + Math.min((currentPagination+1)*RESULTS_PER_PAGE, results.size()) + "** von **" + results.size() + "** Ergebnissen");
+        if (currentPagination < pagesAmount-1) {
+            messageCreateAction.addActionRow(
+                    moreButton
+            );
+        }
+        messageCreateAction.queue(message -> paginationMessage = message);
     }
 
     private void printCurrentPage(MessageChannelUnion channel) {

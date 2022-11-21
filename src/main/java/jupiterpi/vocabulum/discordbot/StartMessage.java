@@ -8,8 +8,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 public class StartMessage extends ListenerAdapter {
-    public static void init() {
-        App.jda.addEventListener(new StartMessage());
+    public static Component component() {
+        return new Component()
+                .eventListeners(new StartMessage());
     }
 
     @Override
@@ -28,8 +29,6 @@ public class StartMessage extends ListenerAdapter {
             }
         }
     }
-
-
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
