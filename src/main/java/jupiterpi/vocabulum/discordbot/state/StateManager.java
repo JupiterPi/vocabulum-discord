@@ -9,10 +9,13 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class StateManager extends ListenerAdapter {
@@ -26,9 +29,9 @@ public class StateManager extends ListenerAdapter {
                         Commands.slash(SEARCH_COMMAND, "Nach Vokabeln suchen")
                                 .addOption(OptionType.STRING, SEARCH_COMMAND_QUERY_OPTION, "Vokabel, nach der gesucht werden soll, oder ein Teil davon", true, true),
                         Commands.slash(SESSION_COMMAND, "Eine Vokabelabfrage starten")
-                                .addOption(OptionType.STRING, SESSION_COMMAND_SELECTION_OPTION, "Auswahl von Vokabeln, die abgefragt werden sollen", true, false)
-                                .addOption(OptionType.STRING, SESSION_COMMAND_MODE_OPTION, "Abfragemodus (\"Chat\" oder \"Cards\")", false, false)
-                                .addOption(OptionType.STRING, SESSION_COMMAND_DIRECTION_OPTION, "Abfragerichtung (\"lg\", \"gl\" oder \"rand\")", false, false)
+                                .addOption(OptionType.STRING, SESSION_COMMAND_SELECTION_OPTION, "Auswahl von Vokabeln, die abgefragt werden sollen (z. B. 33:1_2,34)", true, false)
+                                .addOption(OptionType.STRING, SESSION_COMMAND_MODE_OPTION, "Abfragemodus: \"C\" (Chat) oder \"K\" (Karteikarten)", false, true)
+                                .addOption(OptionType.STRING, SESSION_COMMAND_DIRECTION_OPTION, "Abfragerichtung: \"ld\" (Lat. -> DE), \"dl\" (DE -> Lat.) oder \"zuf\" (zufällig)", false, true)
                 )
                 .eventListeners(new StateManager());
     }
@@ -40,6 +43,13 @@ public class StateManager extends ListenerAdapter {
     private static final String SESSION_COMMAND_SELECTION_OPTION = "vokabeln";
     private static final String SESSION_COMMAND_MODE_OPTION = "modus";
     private static final String SESSION_COMMAND_DIRECTION_OPTION = "richtung";
+
+    private static final String SESSION_COMMAND_MODE_OPTION_CHAT = "C";
+    private static final String SESSION_COMMAND_MODE_OPTION_CARDS = "K";
+
+    private static final String SESSION_COMMAND_DIRECTION_OPTION_LG = "ld";
+    private static final String SESSION_COMMAND_DIRECTION_OPTION_GL = "dl";
+    private static final String SESSION_COMMAND_DIRECTION_OPTION_RAND = "zuf";
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
@@ -100,8 +110,28 @@ public class StateManager extends ListenerAdapter {
 
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent event) {
-        if (event.getName().equals(SEARCH_COMMAND) && event.getFocusedOption().getName().equals(SEARCH_COMMAND_QUERY_OPTION)) {
+        String cmd = event.getName();
+        String option = event.getFocusedOption().getName();
+
+        if (cmd.equals(SEARCH_COMMAND) && option.equals(SEARCH_COMMAND_QUERY_OPTION)) {
             SearchState.handleQueryAutocomplete(event);
         }
+
+        if (cmd.equals(SESSION_COMMAND)) {
+            if (option.equals(SESSION_COMMAND_MODE_OPTION)) {
+                handleAutocompleteFromList(event, SESSION_COMMAND_MODE_OPTION_CHAT, SESSION_COMMAND_MODE_OPTION_CARDS);
+            }
+            if (option.equals(SESSION_COMMAND_DIRECTION_OPTION)) {
+                handleAutocompleteFromList(event, SESSION_COMMAND_DIRECTION_OPTION_LG, SESSION_COMMAND_DIRECTION_OPTION_GL, SESSION_COMMAND_DIRECTION_OPTION_RAND);
+            }
+        }
+    }
+    private void handleAutocompleteFromList(CommandAutoCompleteInteractionEvent event, String... options) {
+        String input = event.getFocusedOption().getValue();
+        List<Command.Choice> choices = new ArrayList<>();
+        for (String option : options) {
+            if (option.toLowerCase().startsWith(input.toLowerCase())) choices.add(new Command.Choice(option, option));
+        }
+        event.replyChoices(choices).queue();
     }
 }
