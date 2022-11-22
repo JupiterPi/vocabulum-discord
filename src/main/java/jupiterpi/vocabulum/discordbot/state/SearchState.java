@@ -187,7 +187,5 @@ public class SearchState implements State {
     }
 
     @Override
-    public boolean stop() {
-        return true;
-    }
+    public void stop(MessageChannelUnion channel) {}
 }

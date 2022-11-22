@@ -62,13 +62,13 @@ public class StateManager extends ListenerAdapter {
 
             State state = states.get(user.getId());
             if (state != null) {
-                boolean stoppable = state.stop();
-                if (!stoppable) {
+                state.stop(event.getChannel());
+                /*if (!stoppable) {
                     event.reply("Um diesen Befehl zu verwenden, musst du zuerst die aktuelle Aktivität beenden.").setEphemeral(true).queue();
                     return;
                 } else {
                     state = null;
-                }
+                }*/
             }
 
             if (event.getName().equals(SEARCH_COMMAND)) {
@@ -108,6 +108,8 @@ public class StateManager extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+        if (event.getAuthor().isBot()) return;
+
         if (event.getChannel().getType() == ChannelType.PRIVATE) {
             PrivateChannel privateChannel = event.getChannel().asPrivateChannel();
             State state = states.get(privateChannel.getUser().getId());
