@@ -22,7 +22,7 @@ public class App {
         jda = JDABuilder
                 .createDefault(ConfigFile.getProperty("token"))
                 .enableIntents(GatewayIntent.MESSAGE_CONTENT)
-                .setActivity(Activity.playing("Vocabulum"))
+                .setActivity(Activity.playing("vocabulum.de"))
                 .build();
         jda.awaitReady();
         System.out.println("Loaded!");
